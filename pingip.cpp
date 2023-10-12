@@ -105,6 +105,7 @@ int main(int argc, char *argv[])
     int raw_sock = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
     if (raw_sock < 0)
     {
+        std::cout << "error: " << errno;
         perror("Socket Error");
         return 1;
     }
