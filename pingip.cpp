@@ -12,28 +12,6 @@
 #include <netinet/ip.h>
 
 #define PACKETSIZE 64
-#define SOL_IP 0
-
-struct icmphdr
-{
-    u_int8_t type; /* message type */
-    u_int8_t code; /* type sub-code */
-    u_int16_t checksum;
-    union
-    {
-        struct
-        {
-            u_int16_t id;
-            u_int16_t sequence;
-        } echo;            /* echo datagram */
-        u_int32_t gateway; /* gateway address */
-        struct
-        {
-            u_int16_t unused;
-            u_int16_t mtu;
-        } frag; /* path mtu discovery */
-    } un;
-};
 
 struct packet
 {
@@ -41,20 +19,20 @@ struct packet
     char msg[PACKETSIZE - sizeof(struct icmphdr)];
 };
 
-int pid = -1;
-struct protoent *proto = NULL;
-int cnt = 1;
-
 unsigned short checksum(void *b, int len)
 {
     unsigned short *buf = (unsigned short *)b;
-    unsigned int sum = 0;
+    unsigned int sum{0};
     unsigned short result;
 
     for (sum = 0; len > 1; len -= 2)
+    {
         sum += *buf++;
+    }
     if (len == 1)
+    {
         sum += *(unsigned char *)buf;
+    }
     sum = (sum >> 16) + (sum & 0xFFFF);
     sum += (sum >> 16);
     result = ~sum;
@@ -64,21 +42,22 @@ unsigned short checksum(void *b, int len)
 int ping(char *adress)
 {
     const int val = 255;
-    int i, sd;
+    int i, sd, loop, pid{-1}, cnt{1};
+
     struct packet pckt;
     struct sockaddr_in r_addr;
-    int loop;
     struct hostent *hname;
     struct sockaddr_in addr_ping, *addr;
+    struct protoent *proto = NULL;
 
     pid = getpid();
     proto = getprotobyname("ICMP");
     hname = gethostbyname(adress);
+
     bzero(&addr_ping, sizeof(addr_ping));
     addr_ping.sin_family = hname->h_addrtype;
     addr_ping.sin_port = 0;
     addr_ping.sin_addr.s_addr = *(long *)hname->h_addr;
-
     addr = &addr_ping;
 
     sd = socket(PF_INET, SOCK_RAW, proto->p_proto);
@@ -127,7 +106,7 @@ int ping(char *adress)
 
 int main()
 {
-    if (ping("www.google.com"))
+    if (ping((char *)"www.google.com"))
         printf("Ping is not OK. \n");
     else
         printf("Ping is OK. \n");
